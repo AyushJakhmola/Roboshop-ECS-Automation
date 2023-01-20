@@ -45,7 +45,7 @@ resource "aws_ecs_service" "mongodb" {
 }
 
 resource "aws_security_group" "mongodb-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_mongodb"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

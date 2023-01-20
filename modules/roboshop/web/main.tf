@@ -65,7 +65,7 @@ resource "aws_ecs_service" "web" {
 }
 
 resource "aws_security_group" "web-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_web"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

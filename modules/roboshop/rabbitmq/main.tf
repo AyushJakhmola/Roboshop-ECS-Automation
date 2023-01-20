@@ -45,7 +45,7 @@ resource "aws_ecs_service" "rabbitmq" {
 }
 
 resource "aws_security_group" "rabbitmq-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_rabbitmq"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

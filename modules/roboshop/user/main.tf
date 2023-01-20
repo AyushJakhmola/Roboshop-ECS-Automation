@@ -5,7 +5,7 @@ data "template_file" "user_temp" {
 
   vars = {
     redis_url        = "redis.robotshoptf"
-    mongodb_url        = "mongodb://robo:asdfghjkl123@mongo.db.robotshoptf/admin"
+    mongodb_url        = "mongodb://robo:asdfghjkl123@mongodb.robotshoptf/admin"
     user_server_port = "8080"
   }
 }
@@ -57,7 +57,7 @@ resource "aws_ecs_service" "user" {
 }
 
 resource "aws_security_group" "user-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_user"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

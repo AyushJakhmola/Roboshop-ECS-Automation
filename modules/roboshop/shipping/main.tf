@@ -55,7 +55,7 @@ resource "aws_ecs_service" "shipping" {
 }
 
 resource "aws_security_group" "shipping-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_shipping"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

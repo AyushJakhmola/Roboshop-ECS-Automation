@@ -55,7 +55,7 @@ resource "aws_ecs_service" "rating" {
 }
 
 resource "aws_security_group" "rating-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_rating"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

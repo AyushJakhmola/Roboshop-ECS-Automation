@@ -53,7 +53,7 @@ resource "aws_ecs_service" "dispatch" {
 }
 
 resource "aws_security_group" "dispatch-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_dispatch"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

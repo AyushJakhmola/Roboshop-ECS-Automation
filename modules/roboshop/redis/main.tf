@@ -46,7 +46,7 @@ resource "aws_ecs_service" "redis" {
 }
 
 resource "aws_security_group" "redis-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_redis"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

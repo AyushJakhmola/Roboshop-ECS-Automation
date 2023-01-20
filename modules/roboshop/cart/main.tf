@@ -55,7 +55,7 @@ resource "aws_ecs_service" "cart" {
 }
 
 resource "aws_security_group" "cart-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_cart"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

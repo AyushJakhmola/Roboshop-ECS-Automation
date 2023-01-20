@@ -45,7 +45,7 @@ resource "aws_ecs_service" "mysql" {
 }
 
 resource "aws_security_group" "mysql-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_mysql"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 

@@ -5,7 +5,7 @@ data "template_file" "catalogue_temp" {
 
   vars = {
     container_port        = 8080
-    mongodb_url        = "mongodb://robo:asdfghjkl123@mongo.db.robotshoptf/admin"
+    mongodb_url        = "mongodb://robo:asdfghjkl123@mongodb.robotshoptf/admin"
   }
 }
 

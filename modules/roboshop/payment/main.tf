@@ -59,7 +59,7 @@ resource "aws_ecs_service" "payment" {
 }
 
 resource "aws_security_group" "payment-sg" {
-  name        = "allow_tls_catalogue"
+  name        = "allow_tls_payment"
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc_id
 
