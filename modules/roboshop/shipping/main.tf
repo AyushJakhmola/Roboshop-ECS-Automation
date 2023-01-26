@@ -4,17 +4,17 @@ data "template_file" "shipping_temp" {
   template   = file("${path.module}/shipping.json")
 
   vars = {
-    cart_endpoint        = "cart.robotshoptf"
-    catalogue_url   = "catalogue.robotshoptf"
-    db_host   = "mysql.robotshoptf"
+    cart_endpoint        = var.cart_endpoint
+    catalogue_url   = var.catalogue_url
+    db_host   = var.db_host
   }
 }
 resource "aws_ecs_task_definition" "shipping" {
-  family = "shippingtf"
+  family = var.taskdef_service_name
   container_definitions = data.template_file.shipping_temp.rendered
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -22,7 +22,7 @@ resource "aws_ecs_task_definition" "shipping" {
 # ### Service Discovery and Service For shipping 8 
 
 resource "aws_service_discovery_service" "shipping_service" {
-  name = "shipping"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -35,7 +35,7 @@ resource "aws_service_discovery_service" "shipping_service" {
 }
 
 resource "aws_ecs_service" "shipping" {
-  name            = "shipping"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.shipping.arn
   desired_count   = 1

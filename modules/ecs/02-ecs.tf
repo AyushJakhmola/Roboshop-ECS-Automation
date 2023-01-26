@@ -8,7 +8,7 @@ locals {
 resource "aws_security_group" "ec2-ecs-sg" {
   name        = "allow_tls_ec2-ecs-sg"
   description = "Allow TLS inbound traffic"
-  vpc_id      = var.vpc_id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description = "TLS from VPC"
@@ -32,7 +32,11 @@ resource "aws_security_group" "ec2-ecs-sg" {
 
 module "asg" {
   source = "terraform-aws-modules/autoscaling/aws"
-
+   for_each = {
+    one = {
+      instance_type = "t3.micro"
+    }
+   }
   # Autoscaling group
   name = "ec2-ecs-asg"
 
@@ -41,14 +45,14 @@ module "asg" {
   desired_capacity          = 7
   wait_for_capacity_timeout = 0
   health_check_type         = "EC2"
-  vpc_zone_identifier       = var.subnet
+  vpc_zone_identifier       = module.vpc.public_subnets
   
   # Launch template
   launch_template_name        = "ec2-ecs-asg-temp"
   launch_template_description = "Launch template for ec2 ecs"
   update_default_version      = true
 
-  image_id                    = "ami-014cdb1bfb3b2584f"
+  image_id                    = "ami-05e7fa5a3b6085a75"
   instance_type               = "t3a.medium"
   key_name                    = "ayush-squareops"
   user_data         = base64encode(local.user_data)
@@ -57,7 +61,7 @@ module "asg" {
   iam_role_description        = "ECS role for ecs-role-ec2"
   iam_role_policies = {
     AmazonEC2ContainerServiceforEC2Role = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-    AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    # AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
 
   block_device_mappings = [
@@ -103,6 +107,25 @@ module "ecs" {
       }
     }
   }
+  # Capacity provider - autoscaling groups
+  autoscaling_capacity_providers = {
+    one = {
+      auto_scaling_group_arn         = module.asg["one"].autoscaling_group_arn
+      # managed_termination_protection = "ENABLED"
+
+      managed_scaling = {
+        maximum_scaling_step_size = 5
+        minimum_scaling_step_size = 1
+        status                    = "ENABLED"
+        target_capacity           = 60
+      }
+
+      default_capacity_provider_strategy = {
+        weight = 60
+        base   = 20
+      }
+    }
+  }
 
   tags = {
     Environment = "stg"
@@ -112,7 +135,7 @@ module "ecs" {
 
 ### NameSpace in Route 53
 resource "aws_service_discovery_private_dns_namespace" "robotshop_namespace" {
-  name        = "robotshoptf"
+  name        = var.ecs_namespace
   description = "name space"
-  vpc         = var.vpc_id
+  vpc         = module.vpc.vpc_id
 }

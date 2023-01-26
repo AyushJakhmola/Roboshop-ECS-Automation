@@ -20,3 +20,8 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "mysql"
+}

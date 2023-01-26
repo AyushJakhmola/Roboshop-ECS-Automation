@@ -34,7 +34,7 @@
         "memoryReservation": null,
         "volumesFrom": [],
         "stopTimeout": null,
-        "image": "421320058418.dkr.ecr.us-west-2.amazonaws.com/robotshop:rs-mongodb",
+        "image": "309017165673.dkr.ecr.us-east-1.amazonaws.com/public:rs-mongodb",
         "startTimeout": null,
         "firelensConfiguration": null,
         "dependsOn": null,

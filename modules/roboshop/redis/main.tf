@@ -1,11 +1,11 @@
 #### task defination for redis 1
 
 resource "aws_ecs_task_definition" "redis" {
-  family = "redistf"
+  family = var.taskdef_service_name
   container_definitions = file("${path.module}/redis.json")
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -13,7 +13,7 @@ resource "aws_ecs_task_definition" "redis" {
 # ### Service Discovery and Service For Redis 1 
 
 resource "aws_service_discovery_service" "redis_service" {
-  name = "redis"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -26,7 +26,7 @@ resource "aws_service_discovery_service" "redis_service" {
 }
 
 resource "aws_ecs_service" "redis" {
-  name            = "redis"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.redis.arn
   desired_count   = 1

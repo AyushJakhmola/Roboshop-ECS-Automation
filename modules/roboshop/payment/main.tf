@@ -4,21 +4,22 @@ data "template_file" "payment_temp" {
   template   = file("${path.module}/payment.json")
 
   vars = {
-    amqp_host        = "rabitmq.robotshoptf"
-    cart_host        = "cart.robotshoptf"
-    catalogue_host   = "catalogue.robotshoptf"
-    payment_gateway = "https://paypal.com/"
-    shipping_host   = "shipping.robotshoptf"
-    user_host = "user.robotshoptf"
+    amqp_host        = var.amqp_host
+    cart_host        = var.cart_host
+    catalogue_host   = var.catalogue_host
+    payment_gateway = var.payment_gateway
+    shipping_host   = var.shipping_host
+    user_host = var.user_host
+    shop_payment_port = var.shop_payment_port
   }
 }
 
 resource "aws_ecs_task_definition" "payment" {
-  family = "paymenttf"
+  family = var.taskdef_service_name
   container_definitions = data.template_file.payment_temp.rendered
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -26,8 +27,7 @@ resource "aws_ecs_task_definition" "payment" {
 # ### Service Discovery and Service For payment 9
 
 resource "aws_service_discovery_service" "payment_service" {
-  name = "payment"
-
+  name = var.taskdef_service_name
   dns_config {
     namespace_id = var.namespace
 
@@ -39,7 +39,7 @@ resource "aws_service_discovery_service" "payment_service" {
 }
 
 resource "aws_ecs_service" "payment" {
-  name            = "payment"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.payment.arn
   desired_count   = 1

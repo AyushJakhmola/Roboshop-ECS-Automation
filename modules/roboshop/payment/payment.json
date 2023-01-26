@@ -45,7 +45,7 @@
         },
         {
           "name": "SHOP_PAYMENT_PORT",
-          "value": "8080"
+          "value": "${shop_payment_port}"
         },
         {
           "name": "USER_HOST",

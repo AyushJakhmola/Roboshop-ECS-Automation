@@ -20,3 +20,26 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+    
+
+variable "redis_url" {
+  description = "redis_url"
+  default     = "redis.robotshoptf"
+}
+
+variable "mongodb_url" {
+  description = "mongodb_url"
+  default     = "mongodb://robo:asdfghjkl123@mongodb.robotshoptf/admin"
+}
+
+variable "user_server_port" {
+  description = "user_server_port"
+  default     = "8080"
+}
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "user"
+}
+

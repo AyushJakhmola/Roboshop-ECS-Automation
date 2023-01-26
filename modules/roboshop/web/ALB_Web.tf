@@ -66,14 +66,14 @@ module "web-alb" {
     }
   ]
 
-  https_listeners = [
-    {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = "arn:aws:acm:us-west-2:421320058418:certificate/73b9c44b-3865-4f0a-b508-dc118857ae2e"
-      target_group_index = 0
-    }
-  ]
+  # https_listeners = [
+  #   {
+  #     port               = 443
+  #     protocol           = "HTTPS"
+  #     certificate_arn    = "arn:aws:acm:us-west-2:421320058418:certificate/73b9c44b-3865-4f0a-b508-dc118857ae2e"
+  #     target_group_index = 0
+  #   }
+  # ]
 
   http_tcp_listeners = [
     {

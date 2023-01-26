@@ -3,18 +3,18 @@ data "template_file" "rating_temp" {
   template   = file("${path.module}/rating.json")
 
   vars = {
-  catalogue_url = "catalogue.robotshoptf"
-  pdo_url = "mysql.robotshoptf"
+  catalogue_url = var.catalogue_url
+  pdo_url = var.pdo_url
   }
 }
 
 
 resource "aws_ecs_task_definition" "rating" {
-  family = "ratingtf"
+  family = var.taskdef_service_name
   container_definitions = data.template_file.rating_temp.rendered
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -22,7 +22,7 @@ resource "aws_ecs_task_definition" "rating" {
 # ### Service Discovery and Service For rating 10
 
 resource "aws_service_discovery_service" "rating_service" {
-  name = "rating"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -35,7 +35,7 @@ resource "aws_service_discovery_service" "rating_service" {
 }
 
 resource "aws_ecs_service" "rating" {
-  name            = "rating"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.rating.arn
   desired_count   = 1

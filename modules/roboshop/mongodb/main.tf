@@ -1,10 +1,10 @@
 #### task defination for mongodb 2
 resource "aws_ecs_task_definition" "mongodb" {
-  family = "mongodbtf"
+  family = var.taskdef_service_name
   container_definitions = file("${path.module}/mongodb.json")
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -12,7 +12,7 @@ resource "aws_ecs_task_definition" "mongodb" {
 # ### Service Discovery and Service For Mongodb 2
 
 resource "aws_service_discovery_service" "mongodb_service" {
-  name = "mongo.db"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -25,7 +25,7 @@ resource "aws_service_discovery_service" "mongodb_service" {
 }
 
 resource "aws_ecs_service" "mongodb" {
-  name            = "mongodb"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.mongodb.arn
   desired_count   = 1

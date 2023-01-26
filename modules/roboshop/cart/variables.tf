@@ -20,3 +20,23 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+variable "redis_host" {
+  description = "redis host"
+  default     = "redis.robotshoptf"
+}
+
+variable "catalogue_host" {
+  description = "catalogue host"
+  default = "catalogue.robotshoptf"
+}
+
+variable "cart_server_port" {
+  description = "cart server port"
+  default = 8080
+}
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "cart"
+}

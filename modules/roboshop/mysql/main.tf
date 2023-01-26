@@ -1,11 +1,11 @@
 
 #### task defination for mysql 3
 resource "aws_ecs_task_definition" "mysql" {
-  family = "mysqltf"
+  family = var.taskdef_service_name
   container_definitions = file("${path.module}/mysql.json")
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -13,8 +13,7 @@ resource "aws_ecs_task_definition" "mysql" {
 # ### Service Discovery and Service For MySql 3
 
 resource "aws_service_discovery_service" "mysql_service" {
-  name = "mysql"
-
+  name = var.taskdef_service_name
   dns_config {
     namespace_id = var.namespace
     dns_records {
@@ -25,7 +24,7 @@ resource "aws_service_discovery_service" "mysql_service" {
 }
 
 resource "aws_ecs_service" "mysql" {
-  name            = "mysql"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.mysql.arn
   desired_count   = 1

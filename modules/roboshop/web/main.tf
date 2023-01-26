@@ -4,21 +4,21 @@ data "template_file" "web_temp" {
   template   = file("${path.module}/web.json")
 
   vars = {
-  cart_host = "cart.robotshoptf"
-  catalogue_host = "catalogue.robotshoptf"
-  payment_host = "payment.robotshoptf"
-  rating_host = "rating.robotshoptf"
-  shipping_host = "shipping.robotshoptf"
-  user_host = "user.robotshoptf"
+  cart_host = var.cart_host
+  catalogue_host = var.catalogue_host
+  payment_host = var.payment_host
+  rating_host = var.rating_host
+  shipping_host = var.shipping_host
+  user_host = var.user_host
   }
 }
 
 resource "aws_ecs_task_definition" "web" {
-  family = "webtf"
+  family = var.taskdef_service_name
   container_definitions = data.template_file.web_temp.rendered
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -26,7 +26,7 @@ resource "aws_ecs_task_definition" "web" {
 # ### Service Discovery and Service For web 12
 
 resource "aws_service_discovery_service" "web_service" {
-  name = "web"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -39,7 +39,7 @@ resource "aws_service_discovery_service" "web_service" {
 }
 
 resource "aws_ecs_service" "web" {
-  name            = "web"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.web.arn
   desired_count   = 1

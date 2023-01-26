@@ -4,18 +4,18 @@ data "template_file" "user_temp" {
   template   = file("${path.module}/user.json")
 
   vars = {
-    redis_url        = "redis.robotshoptf"
-    mongodb_url        = "mongodb://robo:asdfghjkl123@mongodb.robotshoptf/admin"
-    user_server_port = "8080"
+    redis_url        = var.redis_url
+    mongodb_url        = var.mongodb_url
+    user_server_port = var.user_server_port
   }
 }
 
 resource "aws_ecs_task_definition" "user" {
-  family = "usertf"
+  family = var.taskdef_service_name
   container_definitions = data.template_file.user_temp.rendered
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -24,7 +24,7 @@ resource "aws_ecs_task_definition" "user" {
 # ### Service Discovery and Service For user 6
 
 resource "aws_service_discovery_service" "user_service" {
-  name = "user"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -37,7 +37,7 @@ resource "aws_service_discovery_service" "user_service" {
 }
 
 resource "aws_ecs_service" "user" {
-  name            = "user"
+  name            = var.taskdef_service_name
   cluster         = var.cluster_arn
   task_definition = aws_ecs_task_definition.user.arn
   desired_count   = 1

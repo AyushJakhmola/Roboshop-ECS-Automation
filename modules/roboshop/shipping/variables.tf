@@ -20,3 +20,23 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+variable "cart_endpoint" {
+  description = "cart_endpoint"
+  default     = "cart.robotshoptf"
+}
+
+variable "catalogue_url" {
+  description = "catalogue_url"
+  default     = "catalogue.robotshoptf"
+}
+
+variable "db_host" {
+  description = "db_host"
+  default     = "mysql.robotshoptf"
+}
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "shipping"
+}

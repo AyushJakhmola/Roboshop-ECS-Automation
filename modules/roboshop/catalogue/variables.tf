@@ -20,3 +20,18 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+variable "catalogue_server_port" {
+  description = "catalogue server port"
+  default     = 8080
+}
+
+variable "mongodb_url" {
+  description = "catalogue host"
+  default        = "mongodb://robo:asdfghjkl123@mongodb.robotshoptf/admin"
+}
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "cart"
+}

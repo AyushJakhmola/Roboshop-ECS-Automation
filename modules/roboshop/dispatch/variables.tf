@@ -20,3 +20,13 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+variable "amqp_host" {
+  description = "vpc to launch cluster instances"
+  default = "rebbitmq.robotshoptf"
+}
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "dispatch"
+}

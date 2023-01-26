@@ -20,3 +20,18 @@ variable "cluster_arn" {
 variable "namespace" {
   description = "namespace of route 53"
 }
+
+variable "catalogue_url" {
+  description = "catalogue_url"
+  default     = "catalogue.robotshoptf"
+}
+
+variable "pdo_url" {
+  description = "pdo_url"
+  default     = "mysql.robotshoptf"
+}
+
+variable "taskdef_service_name" {
+  description = "taskdef_service_name"
+  default = "ratting"
+}

@@ -4,17 +4,17 @@ data "template_file" "catalogue_temp" {
   template   = file("${path.module}/catalogue.json")
 
   vars = {
-    container_port        = 8080
-    mongodb_url        = "mongodb://robo:asdfghjkl123@mongodb.robotshoptf/admin"
+    catalogue_server_port        = var.catalogue_server_port
+    mongodb_url        = var.mongodb_url
   }
 }
 
 resource "aws_ecs_task_definition" "catalogue" {
-  family = "cataloguetf"
+  family = var.taskdef_service_name
   container_definitions = data.template_file.catalogue_temp.rendered
   requires_compatibilities = var.require_compatibility
-  execution_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
-  task_role_arn = "arn:aws:iam::421320058418:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
+  task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
@@ -22,7 +22,7 @@ resource "aws_ecs_task_definition" "catalogue" {
 # ### Service Discovery and Service For Catalogue 5
 
 resource "aws_service_discovery_service" "catalogue_service" {
-  name = "catalogue"
+  name = var.taskdef_service_name
 
   dns_config {
     namespace_id = var.namespace
@@ -35,7 +35,7 @@ resource "aws_service_discovery_service" "catalogue_service" {
 }
 
 resource "aws_ecs_service" "catalogue" {
-  name            = "catalogue"
+  name            = var.taskdef_service_name
   cluster         =  var.cluster_arn
   task_definition = aws_ecs_task_definition.catalogue.arn
   desired_count   = 1
