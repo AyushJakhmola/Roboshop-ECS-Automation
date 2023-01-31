@@ -5,6 +5,8 @@ locals {
   EOF
 }
 
+
+#### security group for cluster instances ####
 resource "aws_security_group" "ec2-ecs-sg" {
   name        = "allow_tls_ec2-ecs-sg"
   description = "Allow TLS inbound traffic"
@@ -15,7 +17,7 @@ resource "aws_security_group" "ec2-ecs-sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = ["${var.vpc_cidr}"]
   }
   egress {
     from_port        = 0
@@ -26,7 +28,7 @@ resource "aws_security_group" "ec2-ecs-sg" {
   }
 
   tags = {
-    Name = "allow_tls"
+    Name =  "allow_tls"
   }
 }
 
@@ -34,15 +36,15 @@ module "asg" {
   source = "terraform-aws-modules/autoscaling/aws"
    for_each = {
     one = {
-      instance_type = "t3.micro"
+      instance_type = "t3a.medium"
     }
-   }
+   } 
   # Autoscaling group
   name = "ec2-ecs-asg"
 
-  min_size                  = 0
-  max_size                  = 7
-  desired_capacity          = 7
+  min_size                  = var.min_size
+  max_size                  = var.max_size
+  desired_capacity          = var.desired_capacity
   wait_for_capacity_timeout = 0
   health_check_type         = "EC2"
   vpc_zone_identifier       = module.vpc.public_subnets
@@ -52,9 +54,9 @@ module "asg" {
   launch_template_description = "Launch template for ec2 ecs"
   update_default_version      = true
 
-  image_id                    = "ami-05e7fa5a3b6085a75"
-  instance_type               = "t3a.medium"
-  key_name                    = "ayush-squareops"
+  image_id                    = var.cluster_instance_image_id
+  instance_type               = var.cluster_instance_type
+  key_name                    = var.instance_key_name
   user_data         = base64encode(local.user_data)
   create_iam_instance_profile = true
   iam_role_name               = "ecs-role-ec2"
@@ -72,8 +74,8 @@ module "asg" {
       ebs = {
         delete_on_termination = true
         encrypted             = true
-        volume_size           = 30
-        volume_type           = "gp2"
+        volume_size           = var.instance_volume_size
+        volume_type           = var.instance_volume_type
       }
       }
   ]
@@ -94,7 +96,7 @@ module "asg" {
 module "ecs" {
   source = "terraform-aws-modules/ecs/aws"
 
-  cluster_name = "ecs-robotshop-ec2"
+  cluster_name = var.cluster_name
   cluster_settings = {
   "name": "containerInsights",
   "value": "disabled"

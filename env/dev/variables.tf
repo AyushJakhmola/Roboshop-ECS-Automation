@@ -14,6 +14,7 @@ variable "require_compatibility" {
 
 variable "ecs_namespace" {
   description = "ecs_namespace"
-  default     = "robotshopecs"
+  default     = "ns-fracdfzdvoz7pk5s"
 }
+
 

@@ -28,7 +28,7 @@ variable "redis_host" {
 
 variable "catalogue_host" {
   description = "catalogue host"
-  default = "catalogue.robotshoptf"
+  default = "catalogue.robotshop"
 }
 
 variable "cart_server_port" {
