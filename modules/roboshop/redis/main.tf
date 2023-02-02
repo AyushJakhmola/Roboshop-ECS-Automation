@@ -2,7 +2,7 @@
 
 resource "aws_ecs_task_definition" "redis" {
   family = var.taskdef_service_name
-  container_definitions = file("${path.module}/redis.json")
+  container_definitions = data.template_file.redis_json.rendered
   requires_compatibilities = var.require_compatibility
   execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
@@ -10,6 +10,13 @@ resource "aws_ecs_task_definition" "redis" {
   network_mode = "awsvpc"
 }
 
+data "template_file" "redis_json" {
+  template   = file("${path.module}/redis.json")
+
+  vars = {
+    redis_image = var.redis_image_uri
+  }
+}
 # ### Service Discovery and Service For Redis 1 
 
 resource "aws_service_discovery_service" "redis_service" {

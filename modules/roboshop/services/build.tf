@@ -1,4 +1,4 @@
-resource "aws_codebuild_project" "web-app" {
+resource "aws_codebuild_project" "codebuild_app" {
   name          = var.aws_codebuild_project_name
   description   = "codebuild_project"
   build_timeout = "5"
@@ -23,7 +23,7 @@ resource "aws_codebuild_project" "web-app" {
   }
 
   source {
-    buildspec = data.template_file.cart_buildspec.rendered
+    buildspec = data.template_file.buildspec.rendered
     type            = "GITHUB"
     location        = var.repo_location
     git_clone_depth = 1
@@ -34,7 +34,7 @@ resource "aws_codebuild_project" "web-app" {
   }
 }
 
-data "template_file" "cart_buildspec" {
+data "template_file" "buildspec" {
   template   = file("${path.module}/buildspecfiles/buildspec.yml")
 
   vars = {

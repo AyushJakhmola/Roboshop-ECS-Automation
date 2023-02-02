@@ -1,118 +1,8 @@
-resource "aws_iam_role" "ecs-codebuild-role" {
-  name = "ecs-code-build"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "codebuild.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "ecs-code-build-role-policy" {
-
-  policy = <<POLICY
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Resource": [
-                "*"
-            ],
-            "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Resource": [
-                "*"
-            ],
-            "Action": [
-                "s3:PutObject",
-                "s3:GetObject",
-                "s3:GetObjectVersion",
-                "s3:GetBucketAcl",
-                "s3:GetBucketLocation"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "codebuild:CreateReportGroup",
-                "codebuild:CreateReport",
-                "codebuild:UpdateReport",
-                "codebuild:BatchPutTestCases",
-                "codebuild:BatchPutCodeCoverages"
-            ],
-            "Resource": [
-                "*"
-            ]
-        },
-        {
-            "Sid": "STS",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetRegistryPolicy",
-                "ecr:DescribeRegistry",
-                "ecr:GetAuthorizationToken",
-                "sts:*",
-                "ecr:DeleteRegistryPolicy",
-                "ecr:PutRegistryPolicy",
-                "ecr:PutReplicationConfiguration"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "ECRRepo",
-            "Effect": "Allow",
-            "Action": "ecr:*",
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchGetImage",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "ecr:PutImage",
-                "ecr:InitiateLayerUpload",
-                "ecr:UploadLayerPart",
-                "ecr:CompleteLayerUpload"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-POLICY
-}
-
-
-resource "aws_iam_role_policy_attachment" "ecs_codebuild_attachment" {
-  role       = aws_iam_role.ecs-codebuild-role.name
-  policy_arn = aws_iam_policy.ecs-code-build-role-policy.arn
-}
-
-
-resource "aws_codebuild_project" "web-app" {
-  name          = "code-build-project-web"
-  description   = "test_codebuild_project"
+resource "aws_codebuild_project" "codebuild_app" {
+  name          = var.aws_codebuild_project_name
+  description   = "codebuild_project"
   build_timeout = "5"
-  service_role  = aws_iam_role.ecs-codebuild-role.arn
+  service_role  = var.build_role_arn
 
   artifacts {
     type = "NO_ARTIFACTS"
@@ -133,13 +23,26 @@ resource "aws_codebuild_project" "web-app" {
   }
 
   source {
-    buildspec = file("${path.module}/buildspec.yml")
+    buildspec = data.template_file.buildspec.rendered
     type            = "GITHUB"
-    location        = "https://github.com/AyushJakhmola/robot-shop.git"
+    location        = var.repo_location
     git_clone_depth = 1
 
     git_submodules_config {
       fetch_submodules = true
     }
+  }
+}
+
+data "template_file" "buildspec" {
+  template   = file("${path.module}/buildspecfiles/buildspec.yml")
+
+  vars = {
+    AWS_DEFAULT_REGION = var.AWS_DEFAULT_REGION
+    IMAGE_REPO_NAME = var.IMAGE_REPO_NAME
+    AWS_ACCOUNT_ID = var.AWS_ACCOUNT_ID
+    CONTAINER_NAME = var.CONTAINER_NAME
+    BUILD_ENV = var.BUILD_ENV
+    DIR = var.DIR
   }
 }

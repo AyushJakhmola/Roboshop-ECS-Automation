@@ -25,3 +25,7 @@ variable "taskdef_service_name" {
   description = "taskdef_service_name"
   default = "redis"
 }
+
+variable "redis_image_uri" {
+  description = "redis_image_uri"
+}

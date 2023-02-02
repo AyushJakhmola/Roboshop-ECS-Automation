@@ -1,12 +1,20 @@
 #### task defination for mongodb 2
 resource "aws_ecs_task_definition" "mongodb" {
   family = var.taskdef_service_name
-  container_definitions = file("${path.module}/mongodb.json")
+  container_definitions = data.template_file.mongo_json.rendered
   requires_compatibilities = var.require_compatibility
   execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
+}
+
+data "template_file" "mongo_json" {
+  template   = file("${path.module}/mongodb.json")
+
+  vars = {
+    mongodb_image = var.mongodb_image_uri
+  }
 }
 
 # ### Service Discovery and Service For Mongodb 2
@@ -68,4 +76,8 @@ resource "aws_security_group" "mongodb-sg" {
   tags = {
     Name = "allow_tls"
   }
+}
+
+resource "aws_cloudwatch_log_group" "task_logs" {
+  name = var.cloudwatch_log_group_name
 }

@@ -95,7 +95,7 @@ module "asg" {
 
 module "ecs" {
   source = "terraform-aws-modules/ecs/aws"
-
+  depends_on              = [module.asg]
   cluster_name = var.cluster_name
   cluster_settings = {
   "name": "containerInsights",
@@ -137,6 +137,7 @@ module "ecs" {
 
 ### NameSpace in Route 53
 resource "aws_service_discovery_private_dns_namespace" "robotshop_namespace" {
+  depends_on              = [module.ecs]
   name        = var.ecs_namespace
   description = "name space"
   vpc         = module.vpc.vpc_id

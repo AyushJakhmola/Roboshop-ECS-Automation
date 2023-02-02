@@ -1,13 +1,21 @@
 #### task defination for rabbitmq 4
 resource "aws_ecs_task_definition" "rabbitmq" {
   family = var.taskdef_service_name
-  container_definitions = file("${path.module}/rabbitmq.json")
+  container_definitions = data.template_file.rabbitmq_json.rendered
   requires_compatibilities = var.require_compatibility
   execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
 }
+
+data "template_file" "rabbitmq_json" {
+  template   = file("${path.module}/rabbitmq.json")
+  vars = {
+    rabbitmq_image = var.rabbitmq_image_uri
+  }
+}
+
 
 # ### Service Discovery and Service For RabbitMQ 4
 

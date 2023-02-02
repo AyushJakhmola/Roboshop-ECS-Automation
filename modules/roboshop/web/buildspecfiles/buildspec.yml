@@ -1,11 +1,11 @@
 version: 0.2
 env:
   variables:
-    AWS_DEFAULT_REGION: "us-east-1"
-    IMAGE_REPO_NAME: "web"
-    AWS_ACCOUNT_ID: "309017165673"
-    CONTAINER_NAME: "web"
-    BUILD_ENV: "dev"
+    AWS_DEFAULT_REGION : ${AWS_DEFAULT_REGION}
+    IMAGE_REPO_NAME: ${IMAGE_REPO_NAME}
+    AWS_ACCOUNT_ID: ${AWS_ACCOUNT_ID}
+    CONTAINER_NAME: ${CONTAINER_NAME}
+    BUILD_ENV: ${BUILD_ENV}
 #    SECRET_ID: "arn:aws:secretsmanager:ap-south-1:238129875959:secret"
 #  secrets-manager:
 #     env: simpliv/main/site/
@@ -13,10 +13,10 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+      - REPOSITORY_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_TAG=$${COMMIT_HASH:=latest}
   build:
     commands:
 #      - echo Get Environment variables from AWS SECRETS MANAGER
@@ -24,22 +24,22 @@ phases:
 #      - cat .env
       - ls -al
       - pwd
-      - cd web/
+      - cd ${DIR}/
       - ls -al 
       - pwd
       - echo Building the Docker image...   
-      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG    
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest 
+      - docker build -t ${IMAGE_REPO_NAME}:$${IMAGE_TAG} .
+      - docker tag ${IMAGE_REPO_NAME}:$${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:$${IMAGE_TAG}    
+      - docker tag ${IMAGE_REPO_NAME}:$${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:latest 
       - cd ..
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
+      - docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:$${IMAGE_TAG}
+      - docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:latest
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imageDefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' ${CONTAINER_NAME} $${REPOSITORY_URI}:$${IMAGE_TAG} > imageDefinitions.json
 #      - printf '[{"name":"scheduler","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imageDefinitions_scheduler.json
 #      - printf '[{"name":"queue","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imageDefinitions_queue.json
 #      - printf 'commit_hash:"%s", image_tag:"%s"' $COMMIT_HASH $IMAGE_TAG > imageInfo.txt

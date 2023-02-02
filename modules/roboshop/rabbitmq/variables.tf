@@ -25,3 +25,7 @@ variable "taskdef_service_name" {
   description = "taskdef_service_name"
   default = "rabbitmq"
 }
+
+variable "rabbitmq_image_uri" {
+  description = "rabbitmq_image_uri"
+}

@@ -34,7 +34,7 @@
       "memoryReservation": null,
       "volumesFrom": [],
       "stopTimeout": null,
-      "image": "421320058418.dkr.ecr.us-west-2.amazonaws.com/robotshop:rs-mysql-db",
+      "image": "${mysql_image}",
       "startTimeout": null,
       "firelensConfiguration": null,
       "dependsOn": null,

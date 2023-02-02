@@ -101,3 +101,7 @@ variable "service_sg_name" {
 variable "code_pipeline_name" {
   description = "code_pipeline_name"
 }
+
+variable "cloudwatch_log_group_name" {
+  description = "cloudwatch_log_group_name"
+}

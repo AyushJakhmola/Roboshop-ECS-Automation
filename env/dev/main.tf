@@ -1,9 +1,10 @@
 module "ecs_cluster" {
   source = "../../modules/ecs"
+  depends_on = [module.ecs_repo]
   # vpc_id = module.ecs_cluster.ecs_vpc_id
   # subnet = module.ecs_cluster.public_subnets
   ecs_namespace = var.ecs_namespace
-  cluster_name = "ecs-robotshop-ec2"
+  cluster_name = local.ecs_cluster_name
 
 #### vpc parameters ###
   vpc_name = "ecs-roboshop"
@@ -27,6 +28,8 @@ module "mongodb" {
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
   taskdef_service_name = "mongodb"
+  mongodb_image_uri = module.ecs_repo[0].arn_image
+  cloudwatch_log_group_name = "/ecs/mongodb"
 }
 
 module "redis" {
@@ -37,6 +40,7 @@ module "redis" {
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
   taskdef_service_name = "redis"
+  redis_image_uri = "309017165673.dkr.ecr.us-east-1.amazonaws.com/public:redis"
 }
 
 module "rabbitmq" {
@@ -47,6 +51,7 @@ module "rabbitmq" {
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
   taskdef_service_name = "rabbitmq"
+  rabbitmq_image_uri = "309017165673.dkr.ecr.us-east-1.amazonaws.com/public:rabbitmq"
 }
 
 module "mysql" {
@@ -57,87 +62,95 @@ module "mysql" {
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
   taskdef_service_name = "mysql"
+  mysql_image_uri = module.ecs_repo[1].arn_image
 }
 
 ##### microservice cart configurations #####
 
 module "cart" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.catalogue, module.redis]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "cart"
+  service_sg_name = local.cart_container_name
   ## application conf
-  taskdef_service_name = "cart"
+  taskdef_service_name = local.cart_container_name
   container_definition = data.template_file.cart_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.cart_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-cart"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "web"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "web"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[2].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.cart_container_name
     BUILD_ENV = "dev"
-    DIR = "web"
+    DIR = "cart"
 
   ## deployment conf   
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "cart-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "cart"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.cart_container_name
 }
 
 data "template_file" "cart_json" {
   template   = file("${path.module}/taskdefinations/cart.json")
 
   vars = {
+    log_group = "/ecs/${local.cart_container_name}"
+    region = local.region
     catalogue_host   = local.catalogue_host
     redis_host = local.redis_host
     cart_server_port = local.cart_server_port
-    cart_image = local.cart_image
+    cart_image = module.ecs_repo[2].arn_image
+    container_name = local.cart_container_name
   }
 }
 
-##### microservice user configurations #####
+#### microservice user configurations #####
 
 module "user" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.mongodb, module.redis]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "user"
+  service_sg_name = local.user_container_name
 
   ## application conf
-  taskdef_service_name = "user"
+  taskdef_service_name = local.user_container_name
   container_definition = data.template_file.user_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.user_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-user"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "user"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "user"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[3].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.user_container_name
     BUILD_ENV = "dev"
     DIR = "user"
 
@@ -145,8 +158,8 @@ module "user" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "user-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "user"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.user_container_name
 }
 
 data "template_file" "user_json" {
@@ -156,7 +169,10 @@ data "template_file" "user_json" {
     redis_url        = local.redis_host
     mongodb_url        = local.mongodb_url
     user_server_port = local.user_server_port
-    user_image = local.user_image
+    user_image = module.ecs_repo[3].arn_image
+    log_group = "/ecs/${local.user_container_name}"
+    region = local.region
+    container_name = local.user_container_name
   }
 }
 
@@ -164,31 +180,33 @@ data "template_file" "user_json" {
 
 module "catalogue" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.mongodb]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "catalogue"
+  service_sg_name = local.catalogue_container_name
 
   ## application conf
-  taskdef_service_name = "catalogue"
-  container_definition = data.template_file.user_json.rendered
+  taskdef_service_name = local.catalogue_container_name
+  container_definition = data.template_file.catalogue_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.catalogue_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-catalogue"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "catalogue"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "catalogue"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[4].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.catalogue_container_name
     BUILD_ENV = "dev"
     DIR = "catalogue"
 
@@ -196,17 +214,21 @@ module "catalogue" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "catalogue-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "catalogue"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.catalogue_container_name
 }
 
 data "template_file" "catalogue_json" {
   template   = file("${path.module}/taskdefinations/catalogue.json")
 
   vars = {
-    mongodb_url        = local.mongodb_url
+    # mongodb_url        = local.mongodb_url
+    mongodb_url = jsondecode(data.aws_secretsmanager_secret_version.secret-version.secret_string)["mongodb/url"]
     catalogue_server_port = local.catalogue_server_port
-    catalogue_image = local.catalogue_image
+    catalogue_image = module.ecs_repo[4].arn_image
+    log_group = "/ecs/${local.catalogue_container_name}"
+    region = local.region
+    container_name = local.catalogue_container_name
   }
 }
 
@@ -214,30 +236,32 @@ data "template_file" "catalogue_json" {
 
 module "shipping" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.catalogue, module.cart, module.mysql]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "shipping"
+  service_sg_name = local.shipping_container_name
   ## application conf
-  taskdef_service_name = "shipping"
+  taskdef_service_name = local.shipping_container_name
   container_definition = data.template_file.user_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.shipping_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
+  repo_name = local.repo_name
   branch_name = "master"
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-shipping"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "shipping"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "shipping"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[5].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.shipping_container_name
     BUILD_ENV = "dev"
     DIR = "shipping"
 
@@ -245,18 +269,21 @@ module "shipping" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "shipping-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "shipping"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.shipping_container_name
 }
 
 data "template_file" "shipping_json" {
   template   = file("${path.module}/taskdefinations/shipping.json")
 
   vars = {
-    shipping_image = local.shipping_image
+    shipping_image = module.ecs_repo[5].arn_image
     cart_endpoint        = local.cart_endpoint
     catalogue_url   = local.catalogue_url
     db_host   = local.db_host  
+    log_group = "/ecs/${local.shipping_container_name}"
+    region = local.region
+    container_name = local.shipping_container_name
   }
 }
 
@@ -264,31 +291,33 @@ data "template_file" "shipping_json" {
 
 module "payment" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.user, module.cart, module.rabbitmq]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "payment"
+  service_sg_name = local.payment_container_name
 
   ## application conf
-  taskdef_service_name = "payment"
+  taskdef_service_name = local.payment_container_name
   container_definition = data.template_file.user_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.payment_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-payment"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "payment"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "payment"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[6].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.payment_container_name
     BUILD_ENV = "dev"
     DIR = "payment"
 
@@ -296,22 +325,25 @@ module "payment" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "payment-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "payment"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.payment_container_name
 }
 
 data "template_file" "payment_json" {
   template   = file("${path.module}/taskdefinations/payment.json")
 
   vars = {
+    payment_image = module.ecs_repo[6].arn_image
     amqp_host        = local.amqp_host
     cart_host        = local.cart_endpoint
     catalogue_host   = local.catalogue_host
     payment_gateway = local.payment_gateway
     shipping_host   = local.shipping_host
     user_host = local.user_host
-    shop_payment_port = local.shop_payment_port
-    payment_image = local.payment_image
+    shop_payment_port = local.shop_payment_port  
+    log_group = "/ecs/${local.payment_container_name}"
+    region = local.region
+    container_name = local.payment_container_name
   }
 }
 
@@ -319,31 +351,33 @@ data "template_file" "payment_json" {
 
 module "rating" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.catalogue, module.mysql]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "rating"
+  service_sg_name = local.rating_container_name
 
   ## application conf
-  taskdef_service_name = "rating"
+  taskdef_service_name = local.rating_container_name
   container_definition = data.template_file.user_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.rating_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-rating"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "rating"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "rating"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[7].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.rating_container_name
     BUILD_ENV = "dev"
     DIR = "rating"
 
@@ -351,17 +385,20 @@ module "rating" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "rating-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "rating"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.rating_container_name
 }
 
 data "template_file" "rating_json" {
   template   = file("${path.module}/taskdefinations/rating.json")
 
   vars = {
-    rating_image = local.rating_image
+    rating_image = module.ecs_repo[7].arn_image
+    log_group = "/ecs/${local.rating_container_name}"
+    region = local.region
     catalogue_url = local.catalogue_url
     pdo_url = local.pdo_url
+    container_name = local.rating_container_name
   }
 }
 
@@ -369,31 +406,33 @@ data "template_file" "rating_json" {
 
 module "dispatch" {
   source = "../../modules/roboshop/services"
+  depends_on = [module.rabbitmq]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "dispatch"
+  service_sg_name = local.dispatch_container_name
 
   ## application conf
-  taskdef_service_name = "dispatch"
+  taskdef_service_name = local.dispatch_container_name
   container_definition = data.template_file.user_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.dispatch_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-dispatch"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "dispatch"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "dispatch"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[8].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.dispatch_container_name
     BUILD_ENV = "dev"
     DIR = "dispatch"
 
@@ -401,16 +440,19 @@ module "dispatch" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "dispatch-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "dispatch"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.shipping_container_name
 }
 
 data "template_file" "dispatch_json" {
   template   = file("${path.module}/taskdefinations/dispatch.json")
 
   vars = {
-    dispatch_image = local.dispatch_image
+    dispatch_image = module.ecs_repo[8].arn_image
     amqp_host = local.amqp_host
+    log_group = "/ecs/${local.dispatch_container_name}"
+    region = local.region
+    container_name = local.dispatch_container_name
   }
 }
 
@@ -418,32 +460,34 @@ data "template_file" "dispatch_json" {
 ##### microservice web configurations #####
 
 module "web" {
-  source = "../../modules/roboshop/services"
+  source = "../../modules/roboshop/web"
+  depends_on = [module.user, module.catalogue, module.cart, module.shipping, module.payment, module.rating, module.dispatch]
   ##cluster conf
   require_compatibility = var.require_compatibility
   vpc_id = module.ecs_cluster.ecs_vpc_id
   subnet = module.ecs_cluster.ecs_vpc_public_subnet_id
   cluster_arn = module.ecs_cluster.cluster_arn
   namespace = module.ecs_cluster.namespace_arn
-  service_sg_name = "web"
+  service_sg_name = local.web_container_name
 
   ## application conf
-  taskdef_service_name = "web"
-  container_definition = data.template_file.user_json.rendered
+  taskdef_service_name = local.web_container_name
+  container_definition = data.template_file.web_json.rendered
+  cloudwatch_log_group_name = "/ecs/${local.web_container_name}"
 
   ## source conf 
-  repo_name = "AyushJakhmola/robot-shop"
-  branch_name = "master"
+  repo_name = local.repo_name
+  branch_name = local.branch_name
 
   ## build conf
   aws_codebuild_project_name = "code-build-project-web"
-  repo_location = "https://github.com/AyushJakhmola/robot-shop.git"
+  repo_location = local.repo_location
   build_role_arn = module.ecs_roles.codebuild_role_arn
   # buildspec = data.template_file.cart_buildspec.rendered
-    AWS_DEFAULT_REGION = "us-east-1"
-    IMAGE_REPO_NAME = "web"
-    AWS_ACCOUNT_ID = "309017165673"
-    CONTAINER_NAME = "web"
+    AWS_DEFAULT_REGION = local.region
+    IMAGE_REPO_NAME = module.ecs_repo[9].ecr_repository
+    AWS_ACCOUNT_ID = local.acc_id
+    CONTAINER_NAME = local.web_container_name
     BUILD_ENV = "dev"
     DIR = "web"
 
@@ -451,25 +495,36 @@ module "web" {
   pipeline_role_arn = module.ecs_roles.codepipeline_role_arn
   s3_bucket_name = module.ecs_roles.s3_bucket_name
   code_pipeline_name = "web-pipeline"
-  cluster_name = "ecs-robotshop-ec2"
-  service_name = "web"
+  cluster_name = local.ecs_cluster_name
+  service_name = local.web_container_name
 }
 
 data "template_file" "web_json" {
   template   = file("${path.module}/taskdefinations/web.json")
 
   vars = {
-    web_image = local.web_image
+    web_image = module.ecs_repo[9].arn_image
     catalogue_host = local.catalogue_host
     cart_host = local.cart_host
     payment_host = local.payment_host
     rating_host = "rating.${var.ecs_namespace}"
     shipping_host = "shipping.${var.ecs_namespace}"
     user_host = "user.${var.ecs_namespace}"
+    log_group = "/ecs/${local.web_container_name}"
+    region = local.region
+    container_name = local.web_container_name
   }
 }
 
 module "ecs_repo" {
-  source = "../../modules/Roles"  
-  ecr_repo_name = "rs-catalogue"
+  source = "../../modules/roboshop/ECRimages"  
+  count = length(local.apps) > 0 ? length(local.apps) : 0
+  ecr_repo_name = element(local.apps, count.index)
+  dockerfile_directory = element(local.apps, count.index)
 }
+
+data "aws_secretsmanager_secret_version" "secret-version" {
+  secret_id = "arn:aws:secretsmanager:us-east-1:309017165673:secret:mongodb/url-oRPn1y"
+}
+
+

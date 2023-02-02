@@ -25,3 +25,7 @@ variable "taskdef_service_name" {
   description = "taskdef_service_name"
   default = "mysql"
 }
+
+variable "mysql_image_uri" {
+  description = "mysql_image_uri"
+}

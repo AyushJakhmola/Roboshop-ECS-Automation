@@ -35,6 +35,7 @@ resource "aws_security_group" "web-alb-sg" {
 
 module "web-alb" {
   source  = "terraform-aws-modules/alb/aws"
+  
   version = "~> 8.0"
 
   name = "web-alb"

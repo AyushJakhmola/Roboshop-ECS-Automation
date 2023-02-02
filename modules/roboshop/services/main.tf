@@ -1,4 +1,4 @@
-#### task defination for cart 7
+#### task defination 
 
 resource "aws_ecs_task_definition" "service_defination" {
   family = var.taskdef_service_name
@@ -10,7 +10,7 @@ resource "aws_ecs_task_definition" "service_defination" {
   network_mode = "awsvpc"
 }
 
-# ### Service Discovery and Service For cart 7 
+# ### Service Discovery and Service 
 
 resource "aws_service_discovery_service" "service_discovery" {
   name = var.taskdef_service_name
@@ -43,6 +43,12 @@ resource "aws_ecs_service" "service" {
   service_registries {
     registry_arn = aws_service_discovery_service.service_discovery.arn
   }
+  #   load_balancer {
+  #   count = 0
+  #   target_group_arn = "module.web-alb.target_group_arns[0]"
+  #   container_name   = "web"
+  #   container_port   = 8080
+  # }
 }
 
 resource "aws_security_group" "service_sg" {
@@ -69,4 +75,8 @@ resource "aws_security_group" "service_sg" {
   tags = {
     Name = "allow_tls"
   }
+}
+
+resource "aws_cloudwatch_log_group" "task_logs" {
+  name = var.cloudwatch_log_group_name
 }

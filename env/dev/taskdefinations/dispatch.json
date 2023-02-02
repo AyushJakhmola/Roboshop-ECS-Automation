@@ -6,8 +6,8 @@
         "logDriver": "awslogs",
         "secretOptions": null,
         "options": {
-          "awslogs-group": "/ecs/dispatch",
-          "awslogs-region": "us-west-2",
+          "awslogs-group": "${log_group}",
+          "awslogs-region": "${region}",
           "awslogs-stream-prefix": "ecs"
         }
       },
@@ -56,6 +56,6 @@
       "dockerLabels": null,
       "systemControls": null,
       "privileged": null,
-      "name": "dispatch"
+      "name": "${container_name}"
     }
   ]

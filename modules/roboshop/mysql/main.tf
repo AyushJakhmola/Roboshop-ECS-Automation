@@ -2,12 +2,20 @@
 #### task defination for mysql 3
 resource "aws_ecs_task_definition" "mysql" {
   family = var.taskdef_service_name
-  container_definitions = file("${path.module}/mysql.json")
+  container_definitions = data.template_file.mysql_json.rendered
   requires_compatibilities = var.require_compatibility
   execution_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   task_role_arn = "arn:aws:iam::309017165673:role/ecsTaskExecutionRole"
   memory = 1024
   network_mode = "awsvpc"
+}
+
+data "template_file" "mysql_json" {
+  template   = file("${path.module}/mysql.json")
+
+  vars = {
+    mysql_image = var.mysql_image_uri
+  }
 }
 
 # ### Service Discovery and Service For MySql 3
